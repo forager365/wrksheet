@@ -1,0 +1,17 @@
+{
+  "name": "duckdb-sql-worksheet",
+  "version": "1.0.0",
+  "description": "A SQL worksheet using DuckDB WASM",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python3 -m http.server 8080",
+    "start": "python3 -m http.server 8080"
+  },
+  "dependencies": {
+    "@duckdb/duckdb-wasm": "^1.28.0"
+  },
+  "devDependencies": {},
+  "keywords": ["sql", "duckdb", "wasm", "worksheet"],
+  "author": "",
+  "license": "MIT"
+}

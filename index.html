@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DuckDB SQL Worksheet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            gap: 1rem;
+            padding: 1rem;
+            height: calc(100vh - 80px);
+        }
+
+        .query-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .results-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            background-color: #34495e;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-weight: bold;
+            border-radius: 4px 4px 0 0;
+        }
+
+        .query-editor {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-top: none;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            padding: 1rem;
+            resize: none;
+            outline: none;
+            background-color: white;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background-color: #ecf0f1;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+
+        .execute-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .execute-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .execute-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .clear-btn {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .clear-btn:hover {
+            background-color: #7f8c8d;
+        }
+
+        .download-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+            margin-left: 0.5rem;
+        }
+
+        .download-btn:hover {
+            background-color: #229954;
+        }
+
+        .download-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .results-container {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-top: none;
+            background-color: white;
+            overflow: auto;
+            padding: 1rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: #7f8c8d;
+        }
+
+        .error {
+            background-color: #e74c3c;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .success {
+            background-color: #27ae60;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .results-table th,
+        .results-table td {
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            text-align: left;
+        }
+
+        .results-table th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+
+        .results-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        .status-bar {
+            background-color: #34495e;
+            color: white;
+            padding: 0.5rem 1rem;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🦆 DuckDB SQL Worksheet</h1>
+    </div>
+
+    <div class="container">
+        <div class="query-panel">
+            <div class="panel-header">SQL Query</div>
+            <textarea 
+                id="queryEditor" 
+                class="query-editor" 
+                placeholder="Enter your SQL query here...&#10;&#10;Basic Example:&#10;SELECT random() FROM generate_series(1,20);&#10;CREATE TABLE users (id INTEGER, name VARCHAR, age INTEGER);&#10;INSERT INTO users VALUES (1, 'John', 25), (2, 'Jane', 30);&#10;SELECT * FROM users WHERE age > 20;&#10;&#10;DuckDB Features (when WASM loads successfully):&#10;• All standard SQL operations&#10;• JSON and CSV processing&#10;• Advanced aggregations and window functions&#10;• Complex data types (arrays, structs)&#10;&#10;Fallback Features (SimpleSQL):&#10;• CREATE TABLE, INSERT, SELECT, DROP TABLE&#10;• Basic WHERE clauses and filtering &#10;&#10;DuckDb SQL: &#10; WITH damage_report AS (SELECT {'gold_casualties':5, 'blue_casualties':15, 'red_casualties': 10000} AS casualties) FROM damage_report SELECT casualties.*;"
+
+            ></textarea>
+            <div class="button-row">
+                <button id="executeBtn" class="execute-btn">Execute Query</button>
+                <button id="clearBtn" class="clear-btn">Clear</button>
+            </div>
+        </div>
+
+        <div class="results-panel">
+            <div class="panel-header">Results</div>
+            <div class="results-container">
+                <div id="loading" class="loading">
+                    Executing query...
+                </div>
+                <div id="results">
+                    <p style="color: #7f8c8d; text-align: center; padding: 2rem;">
+                        Execute a query to see results here
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span id="statusText">Ready</span>
+        <span id="executionTime"></span>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "apache-arrow": "./node_modules/apache-arrow/Arrow.mjs",
+            "flatbuffers": "./node_modules/flatbuffers/mjs/flatbuffers.js",
+            "tslib": "./node_modules/tslib/tslib.es6.js"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as duckdbWasm from './node_modules/@duckdb/duckdb-wasm/dist/duckdb-browser.mjs';
+        window.duckdb = duckdbWasm;
+        console.log('DuckDB WASM loaded, initializing app...');
+        
+        // Load and initialize the app after DuckDB is ready
+        const script = document.createElement('script');
+        script.src = 'app.js';
+        script.onload = () => {
+            console.log('App script loaded, DuckDB should be available');
+        };
+        document.body.appendChild(script);
+    </script>
+</body>
+</html>
